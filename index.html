@@ -1,0 +1,233 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crypto Utils</title>
+<link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<style>
+body {
+  font-family: 'Lato', sans-serif;
+  margin: 10px;
+}
+
+#question_text {
+ font-size: 25px;
+}
+
+#answer {
+ font-size: 25px;
+}
+
+#question {
+  margin: 20px;
+}
+
+</style>
+
+</head>
+<body>
+<form class="form-inline" id="test_form">
+<div class="form-group">
+<label>Type of test</label>
+<select id="type">
+  <option value="+">Addition</option>
+  <option value="-">Subtraction</option>
+  <option value="*">Multiplication</option>
+  <option value="/">Division</option>
+</select>
+</div>
+
+<div class="form-group">
+<label>Number of digits</label>
+<select id="digits">
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+</select>
+</div>
+
+<div class="form-group">
+<label>Minutes</label>
+<select id="minutes">
+<option value="1">1</option>
+<option value="5">5</option>
+<option value="15">15</option>
+<option value="30">30</option>
+</select>
+</div>
+
+<div class="form-group">
+<label>Check Each Question</label>
+<input type="checkbox" id="right_mode"/>
+</div>
+<button type="button"  id="btn_start" class="btn btn-primary btn-lg">Start Test</button>
+
+</form>
+
+<div id="question">
+<span id="timer"></span><br>
+<span id="question_text"></span><input id="answer" type="number" style="width:100px"></input><span class="label label-danger" id="wrong">Wrong try again!</span>
+<br/>
+<br/>
+<button class="btn btn-default btn-lg" id="btn_next">Next Question -></button>
+<br>
+<a id="btn_results">Results</a>
+</div>
+
+<div id="results">
+</div>
+
+</body>
+<script>
+var counter = 0;
+var test_seconds = null;
+var qtype = null;
+var digits = null;
+var fn;
+var sn;
+var min;
+var max;
+var start_time;
+var tick_id;
+var questions = [];
+function init_app(){
+
+
+ $('#question').hide();
+ $('#results').hide();
+
+  $('#btn_start').click(function(){
+	start_test()
+  });
+
+  $('#btn_results').click(function(){
+	show_results()
+  });
+
+  $('#btn_next').click(function(){
+
+	  $('#wrong').hide();
+	  if(check_question()){
+		show_question();
+	  }else{
+		if(!$('#right_mode').is(':checked'))
+		  show_question();
+		else
+		  $('#wrong').show();
+	  }
+  });
+
+}
+
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function check_question(){
+  var answer = null;
+  if(qtype == '+')
+	answer = fn + sn;
+  if(qtype == '-')
+	answer = fn - sn;
+  if(qtype == '*')
+	answer = fn * sn;
+  if(qtype == '/')
+	answer = fn / sn;
+
+  var user_answer = parseInt($('#answer').val());
+  console.log(user_answer, answer);
+  // save answer
+  questions[counter-1] = [fn, sn, qtype, answer, user_answer];
+  return user_answer == answer;
+}
+
+function start_test(){
+  $('#test_form').hide();
+  $('#question').show();
+  $('#wrong').hide();
+  start_time = new Date();
+  counter = 0;
+  questions = [];
+  test_seconds = parseInt($('#minutes').val())*60;
+  //test_seconds=10;
+  qtype = $('#type').val();
+  digits = parseInt($('#digits').val());
+  min = 10**(digits-1)
+  max = 10**digits;
+  console.log("minutes", minutes, "qtype", qtype, "digits", digits);
+  show_question();
+  tick_id = setInterval(tick_tock, 1000)
+}
+
+function finish_test(){
+  clearInterval(tick_id);
+  $('#question').hide();
+  show_results();
+}
+
+function show_results(){
+  $('#results').show();
+
+  var html = ['<table class="table">'];
+  html.push('') //caption placeholder
+  html.push('<thead></tr>')
+  html.push('<th>#</th>')
+  html.push('<th>Question</th>')
+  html.push('<th>Answer</th>')
+  html.push('<th>Your Answer</th>')
+  html.push('</tr></thead>')
+  html.push('<tbody>')
+  var wrong = 0;
+  for(var i=0;i<questions.length;i++){
+    var q = questions[i];
+    if(q[3] == q[4]){
+      html.push('<tr class="success">')
+    }else{
+      wrong += 1
+      html.push('<tr class="danger">')
+    }
+    html.push('<td>'+(i+1)+'</td>')
+    html.push('<td>'+q[0]+' '+q[2]+' ' +q[1]+'</td>')
+    html.push('<td>'+q[3]+'</td>')
+    html.push('<td>'+q[4]+'</td>')
+    html.push('</tr>')
+  }
+
+  html.push('</tbody>')
+  html.push('</table')
+
+  var percent = wrong*100/questions.length
+  var caption = '<caption>'+percent.toFixed(1) +"% wrong i.e. " +wrong+" out of "+questions.length+'</caption>'
+  html[1] = caption
+  $('#results').html(html.join('\n'))
+}
+
+function show_question(){
+   counter += 1
+   console.log("question number",counter);
+   fn =  getRandomInt(min, max);
+   sn = getRandomInt(min, max);
+   var html = "Q" + counter + ". &nbsp; &nbsp;  "+fn + " " + qtype + " " + sn + " = "
+   $('#question_text').html(html)
+   $('#answer').val('')
+}
+
+function tick_tock(){
+	var elasped_secs = parseInt((new Date() - start_time)/1000);
+	if(elasped_secs > test_seconds){
+		finish_test();
+	}
+	var minutes = parseInt(elasped_secs/60)
+    var secs = elasped_secs%60;
+	$('#timer').html(minutes+" mins "+secs+" secs done out of "+parseInt(test_seconds/60)+" mins");
+
+}
+
+$( document ).ready(init_app)
+</script>
+</html>
